@@ -1,0 +1,41 @@
+name: Welcome New Contributors
+
+on:
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if user is a first-time contributor
+        id: check
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: pulls } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              author: context.payload.pull_request.user.login
+            });
+            return pulls.length === 1;
+
+      - name: Welcome new contributor
+        if: steps.check.outputs.result == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issue_number = context.payload.pull_request.number;
+            const user = context.payload.pull_request.user.login;
+            const mentors = ['mentor1', 'mentor2', 'mentor3'];
+            const assignedMentor = mentors[Math.floor(Math.random() * mentors.length)];
+            const message = `🎉 Welcome @${user} to the project! A mentor, @${assignedMentor}, has been assigned to help you. Feel free to ask any questions! 🚀`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              body: message
+            });
